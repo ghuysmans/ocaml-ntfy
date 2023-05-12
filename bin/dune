@@ -1,0 +1,4 @@
+(executables
+ (names main)
+ (libraries ntfy cohttp-lwt-unix)
+ (preprocess (pps lwt_ppx)))

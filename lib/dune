@@ -1,0 +1,4 @@
+(library
+ (name ntfy)
+ (libraries cohttp-lwt tls)
+ (preprocess (pps ppx_deriving_yojson ppx_deriving.show)))
