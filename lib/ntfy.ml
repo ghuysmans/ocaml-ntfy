@@ -5,22 +5,16 @@ module Assoc = struct
     Ok (Yojson.Safe.Util.(List.map (fun (k, v) -> k, to_string v) (to_assoc j)))
 end
 
-module Uri = struct
-  type t = Uri.t
+type uri = Uri.t
 
-  let of_yojson = function
-    | `String s -> Ok (Uri.of_string s)
-    | _ -> Error "uri"
-
-  let make = Uri.make
-
-  let of_string = Uri.of_string
-end
+let uri_of_yojson = function
+  | `String s -> Ok (Uri.of_string s)
+  | _ -> Error "uri"
 
 module Action = struct
   type view = {
     label: string; (** Label of the action button in the notification *)
-    uri: Uri.t; (** URL to open when action is tapped *)
+    uri: uri; (** URL to open when action is tapped *)
     clear: bool [@default false]; (** Clear notification after action button is tapped *)
   } [@@deriving of_yojson {strict = false}]
 
@@ -42,7 +36,7 @@ module Action = struct
 
   type http = {
     label: string; (** Label of the action button in the notification *)
-    url: Uri.t; (** URL to which the HTTP request will be sent *)
+    url: uri; (** URL to which the HTTP request will be sent *)
     meth: meth [@default POST] [@key "method"]; (** HTTP method to use for request *)
     headers: Assoc.t [@default []]; (** HTTP headers to pass in request *)
     body: string [@default ""]; (** HTTP body *)
@@ -79,7 +73,7 @@ let topics_of_yojson = function
 
 type attachment = {
   name: string; (** Name of the attachment *)
-  url: Uri.t; (** URL of the attachment *)
+  url: uri; (** URL of the attachment *)
   typ: string option [@key "type"] [@default None]; (** MIME type of the attachment, only defined if attachment was uploaded to ntfy server *)
   size: int option [@default None]; (** Size of the attachment in bytes, only defined if attachment was uploaded to ntfy server *)
   expires: int option [@default None]; (** Attachment expiry date as Unix time stamp, only defined if attachment was uploaded to ntfy server *)
@@ -110,7 +104,7 @@ type t = {
   title: string option [@default None]; (** Message title; if not set defaults to ntfy.sh/<topic> *)
   tags: string list [@default []]; (** List of tags that may or not map to emojis *)
   priority: priority [@default Default]; (** Message priority *)
-  click: Uri.t option [@default None]; (** Website opened when notification is clicked *)
+  click: uri option [@default None]; (** Website opened when notification is clicked *)
   actions: Action.t list [@default []]; (** Action buttons that can be displayed in the notification *)
   attachment: attachment option [@default None]; (** Details about an attachment *)
 } [@@deriving of_yojson]
