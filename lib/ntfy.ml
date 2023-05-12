@@ -14,7 +14,7 @@ let uri_of_yojson = function
 module Action = struct
   type view = {
     label: string; (** Label of the action button in the notification *)
-    uri: uri; (** URL to open when action is tapped *)
+    url: uri; (** URL to open when action is tapped *)
     clear: bool [@default false]; (** Clear notification after action button is tapped *)
   } [@@deriving of_yojson {strict = false}]
 
