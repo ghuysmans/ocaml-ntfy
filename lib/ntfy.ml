@@ -108,7 +108,7 @@ type t = {
   event: event; (** Message type, typically you'd be only interested in [Message] *)
   topics: topics [@key "topic"]; (** topics the message is associated with; only one for all [Message] events, but may be a list in [Open] events *)
   message: string option [@default None]; (** Message body; always present in [Message] events *)
-  title: string option [@default None]; (** Message title; if not set defaults to ntfy.sh/<topic> *)
+  title: string option [@default None]; (** Message title *)
   tags: string list [@default []]; (** List of tags that may or not map to emojis *)
   priority: priority [@default Default]; (** Message priority *)
   click: uri option [@default None]; (** Website opened when notification is clicked *)
@@ -122,7 +122,7 @@ type message = {
   expires: int option; (** Unix time stamp indicating when the message will be deleted *)
   topic: string; (** topic the message is associated with *)
   message: string; (** Message body *)
-  title: string; (** Message title; if not set defaults to ntfy.sh/<topic> *)
+  title: string option; (** Message title *)
   tags: string list; (** List of tags that may or not map to emojis *)
   priority: priority; (** Message priority *)
   click: uri option; (** Website opened when notification is clicked *)
@@ -175,7 +175,7 @@ module Make (C : Cohttp_lwt.S.Client) = struct
               expires = t.expires;
               topic = List.hd t.topics;
               message = Option.get t.message;
-              title = Option.get t.title;
+              title = t.title;
               tags = t.tags;
               priority = t.priority;
               click = t.click;
