@@ -94,6 +94,13 @@ let priority_of_yojson = function
   | `Int 1 -> Ok Min
   | _ -> Error "priority"
 
+let int_of_priority = function
+  | Max -> 5
+  | High -> 4
+  | Default -> 3
+  | Low -> 2
+  | Min -> 1
+
 type t = {
   id: string; (** Randomly chosen message identifier *)
   time: int; (** Message date time, as Unix time stamp *)
@@ -112,10 +119,32 @@ type t = {
 module Make (C : Cohttp_lwt.S.Client) = struct
   open Lwt.Infix
 
-  (* FIXME https://docs.ntfy.sh/subscribe/api/#list-of-all-parameters *)
-
-  let listen topic =
-    let uri = Uri.make ~scheme:"https" ~host:"ntfy.sh" ~path:("/" ^ topic ^ "/json") () in
+  let subscribe ?(host="ntfy.sh")
+      ?(poll=false) ?since ?(scheduled=false)
+      ?id ?message ?title ?priorities ?tags
+      topic =
+    let path = "/" ^ Uri.pct_encode topic ^ "/json" in
+    let query =
+      let add key cond l = if cond then (key, []) :: l else l in
+      let add' key value l =
+        match value with
+        | None -> l
+        | Some v -> (key, [v]) :: l
+      in
+      let string_of_priorities l =
+        List.map (fun x -> string_of_int (int_of_priority x)) l |>
+        String.concat ","
+      in
+      add "poll" poll [] |>
+      add' "since" (Option.map string_of_int since) |>
+      add "scheduled" scheduled |>
+      add' "id" id |>
+      add' "message" message |>
+      add' "title" title |>
+      add' "priority" (Option.map string_of_priorities priorities) |>
+      add' "tags" (Option.map (fun l -> String.concat "," l) tags)
+    in
+    let uri = Uri.make ~scheme:"https" ~host ~path ~query () in
     C.get uri >>= fun (resp, body) ->
     let s = Cohttp_lwt.Body.to_stream body in
     match Cohttp.Response.status resp with
