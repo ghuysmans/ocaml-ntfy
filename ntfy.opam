@@ -1,0 +1,23 @@
+opam-version: "2.0"
+synopsis: "ntfy.sh client library for OCaml"
+maintainer: ["Guillaume Huysmans <ghuysmans99@gmail.com>"]
+authors: ["Guillaume Huysmans <ghuysmans99@gmail.com>"]
+license: "GPL-2.0-or-later"
+homepage: "https://github.com/ghuysmans/ocaml-ntfy"
+bug-reports: "https://github.com/ghuysmans/ocaml-ntfy/issues"
+depends: ["cohttp-lwt" "tls" "ppx_deriving_yojson"]
+build: [
+  ["dune" "subst"] {pinned}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+dev-repo: "git+https://github.com/ghuysmans/ocaml-ntfy.git"
