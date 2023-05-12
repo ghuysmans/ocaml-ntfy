@@ -106,7 +106,7 @@ type t = {
   time: int; (** Message date time, as Unix time stamp *)
   expires: int option [@default None]; (** Unix time stamp indicating when the message will be deleted *)
   event: event; (** Message type, typically you'd be only interested in [Message] *)
-  topic: topics; (** topics the message is associated with; only one for all [Message] events, but may be a list in [Open] events *)
+  topics: topics [@key "topic"]; (** topics the message is associated with; only one for all [Message] events, but may be a list in [Open] events *)
   message: string option [@default None]; (** Message body; always present in [Message] events *)
   title: string option [@default None]; (** Message title; if not set defaults to ntfy.sh/<topic> *)
   tags: string list [@default []]; (** List of tags that may or not map to emojis *)
@@ -115,6 +115,20 @@ type t = {
   actions: Action.t list [@default []]; (** Action buttons that can be displayed in the notification *)
   attachment: attachment option [@default None]; (** Details about an attachment *)
 } [@@deriving of_yojson]
+
+type message = {
+  id: string; (** Randomly chosen message identifier *)
+  time: int; (** Message date time, as Unix time stamp *)
+  expires: int option; (** Unix time stamp indicating when the message will be deleted *)
+  topic: string; (** topic the message is associated with *)
+  message: string; (** Message body *)
+  title: string; (** Message title; if not set defaults to ntfy.sh/<topic> *)
+  tags: string list; (** List of tags that may or not map to emojis *)
+  priority: priority; (** Message priority *)
+  click: uri option; (** Website opened when notification is clicked *)
+  actions: Action.t list; (** Action buttons that can be displayed in the notification *)
+  attachment: attachment option; (** Details about an attachment *)
+}
 
 module Make (C : Cohttp_lwt.S.Client) = struct
   open Lwt.Infix
@@ -149,10 +163,26 @@ module Make (C : Cohttp_lwt.S.Client) = struct
     let s = Cohttp_lwt.Body.to_stream body in
     match Cohttp.Response.status resp with
     | `OK ->
-      Lwt_stream.map (fun x ->
+      Lwt_stream.filter_map (fun x ->
         match of_yojson (Yojson.Safe.from_string x) with
-        | Ok t -> t
         | Error e -> failwith e
+        | Ok t ->
+          match t.event with
+          | Message ->
+            Some {
+              id = t.id;
+              time = t.time;
+              expires = t.expires;
+              topic = List.hd t.topics;
+              message = Option.get t.message;
+              title = Option.get t.title;
+              tags = t.tags;
+              priority = t.priority;
+              click = t.click;
+              actions = t.actions;
+              attachment = t.attachment;
+            }
+          | _ -> None
       ) s |>
       Lwt.return
     | _ ->
